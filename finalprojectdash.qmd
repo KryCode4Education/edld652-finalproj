@@ -1,0 +1,191 @@
+---
+title: "EDLD 652 Final Project"
+author: James Phillips & Ramtin Ranjpour
+output-file: index.html
+format:
+  dashboard:
+    theme: spacelab
+execute:
+  freeze: auto
+---
+
+```{r}
+#| label: load-packages
+#| include: false
+
+library(httr2) # For creating and submitting HTTP requests.
+library(jsonlite) # For bidirectional mapping between JSON data and R data.
+library(tidyverse) # For dplyr, purrr, tidyr, readr, and lubridate.
+
+```
+
+```{r}
+#| label: get-parse-code
+#| include: false
+
+# DO NOT MODIFY WITHOUT CHECKING WITH JPL PARAMETERS.
+
+sentry_get <- function(query = list()) {
+  req <- request("https://ssd-api.jpl.nasa.gov/sentry.api") |> 
+    req_url_query(!!!query) |> 
+    req_user_agent("R (httr2); Sentry API client") |> 
+    req_timeout(30)
+  
+  resp <- req |> req_perform()
+  
+  # Per JPL, throws an informative error on non-200.
+  resp |> resp_check_status()
+  
+  txt <- resp |> resp_body_string()
+  payload <- fromJSON(txt, simplifyVector = FALSE)
+  
+    # Handle API-level errors.
+  if (!is.null(payload$error)) {
+    stop(sprintf("Sentry API error: %s", payload$error), call. = FALSE)
+  }
+  
+  # Version check recommended by JPL.
+  ver <- payload$signature$version
+  ver <- if (is.null(ver)) NA_character_ else as.character(ver)[1]
+  
+  if (!is.na(ver) && ver != "2.0") {
+    warning(springf(
+      "Sentry API signature version is %s (docs show 2.0). Format may differ.",
+      ver
+    ))
+  }
+  
+  payload
+}
+```
+
+```{r}
+#| label: data-table-load
+#| include: false
+
+repair_fields <- function(fields, n_cols) {
+  if (is.null(fields) || length(fields) != n_cols) {
+    fields <- paste0("col_", seq_len(n_cols))
+  } else {
+    fields <- as.character(fields)
+    bad <- is.na(fields) | trimws(fields) == ""
+    fields[bad] <- paste0("col_", which(bad))
+  }
+  
+  make.unique(fields)
+}
+
+as_sentry_table <- function(payload) {
+  if (is.null(payload$data)) {
+    stop("Payload has no $data element.")
+  }
+  
+  dat <- payload$data
+  
+  if (is.list(dat) && length(dat) > 0 && is.list(dat[[1]])) {
+    if (!is.null(names(dat[[1]])) && any(nzchar(names(dat[[1]])))) {
+      out <- bind_rows(dat)
+      return(as_tibble(out, .name_repair = "unique"))
+    }
+    
+    if (!is.null(payload$fields)) {
+      n_cols <- length(payload$fields)
+      fields <- repair_fields(payload$fields, n_cols)
+      
+      rows <- map(dat, ~{
+        x <- unlist(.x, use.names = FALSE)
+        length(x) <- n_cols
+        x
+      })
+      
+      df <- as.data.frame(do.call(rbind, rows), stringsAsFactors = FALSE)
+      names(df) <- fields
+      return(as_tibble(df, .name_repair = "unique"))
+    }
+  }
+  
+  if (is.data.frame(dat)) {
+    return(as_tibble(dat, .name_repair = "unique"))
+  }
+  
+  out <- as_tibble(dat, .name_repair = "unique")
+  return(out)
+}
+
+asteroid_summary <- sentry_get()
+asteroid_table <- as_sentry_table(asteroid_summary)
+
+asteroid_table_typed <- asteroid_table |> 
+  mutate(
+    ps_cum = parse_double(ps_cum),
+    ps_max = parse_double(ps_max),
+    ip = parse_double(ip),
+    h = parse_double(h),
+    ts_max = parse_double(ts_max),
+    v_inf = parse_double(v_inf),
+    diameter = parse_double(diameter),
+    last_obs_jd = parse_double(last_obs_jd),
+    n_imp = as.integer(n_imp),
+    last_obs = as.Date(last_obs)
+  )
+```
+
+```{r}
+#| label: virtual-impactors
+#| include: false
+
+# This is a possible limiting of the dataset for visualization purposes.
+
+v_payload <- sentry_get(list(all = "1", `ip-min` = "1e-6"))
+
+vi_tbl <- bind_rows(v_payload$data) |> 
+  as_tibble(.name_repair = "unique") |> 
+  mutate(across(everything(), ~na_if(as.character(.x), "")))
+
+num_cols <- c(
+  "ip", "ps", "ts", "h", "diameter", "v_inf", "last_obs_jd", "sigma", "width", "stretch", "energy", "t_sigma"
+)
+date_cols <- c("last_obs")
+
+present_num_cols <- intersect(names(vi_tbl), num_cols)
+present_date_cols <- intersect(names(vi_tbl), date_cols)
+
+vi_tbl_typed <- vi_tbl |> 
+  mutate(
+    across(all_of(present_num_cols), readr::parse_double),
+    across(all_of(present_date_cols), as.Date)
+)
+```
+
+```{r}
+#| label: obj-details
+#| include: false
+
+# This allows for accessing specific objects based on their designation. At current, "101955" is Bennu.
+
+o_payload <- sentry_get(list(des = "101955"))
+
+obj_summary_tbl <- bind_rows(o_payload$summary) |> 
+  as_tibble(.name_repair = "unique") |> 
+  mutate(across(everything(), ~na_if(as.character(.x), "")))
+
+obj_impacts_tbl <- bind_rows(o_payload$data) |> 
+  as_tibble(.name_repair = "unique") |> 
+  mutate(across(everything(), ~na_if(as.character(.x), "")))
+```
+
+```{r}
+#| label: sample-plot
+
+# For demonstration purposes; not to be included in our final (at least, not in this iteration).
+
+ggplot(asteroid_table_typed, aes(x = ip, y = ps_max)) +
+  geom_point(alpha = 0.6) + 
+  scale_x_log10() + 
+  labs(
+    title = "Maximum Palermo Scale vs. Impact Probability",
+    x = "Impact Probability (log10 scale)",
+    y = "Maximum Palermo Scale (ps_max)"
+  )
+```
+
