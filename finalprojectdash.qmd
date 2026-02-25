@@ -6,7 +6,7 @@ format:
   dashboard:
     theme: spacelab
 execute:
-  freeze: auto
+  freeze: false
 ---
 
 ```{r}
@@ -16,6 +16,7 @@ execute:
 library(httr2) # For creating and submitting HTTP requests.
 library(jsonlite) # For bidirectional mapping between JSON data and R data.
 library(tidyverse) # For dplyr, purrr, tidyr, readr, and lubridate.
+library(scales) # For aesthetic changes and methods for automatically determining breaks and labels for axes and legends.
 
 ```
 
@@ -39,7 +40,7 @@ sentry_get <- function(query = list()) {
   txt <- resp |> resp_body_string()
   payload <- fromJSON(txt, simplifyVector = FALSE)
   
-    # Handle API-level errors.
+  # Handle API-level errors.
   if (!is.null(payload$error)) {
     stop(sprintf("Sentry API error: %s", payload$error), call. = FALSE)
   }
@@ -128,6 +129,20 @@ asteroid_table_typed <- asteroid_table |>
     n_imp = as.integer(n_imp),
     last_obs = as.Date(last_obs)
   )
+
+asteroid_table_typed$last_obs_jd <- NULL
+asteroid_table_typed$id <- NULL
+asteroid_table_typed$h <- NULL
+asteroid_table_typed$des <- NULL
+
+reorder <- c(
+  "fullname", "last_obs", "diameter", "ip", "n_imp", "v_inf", "range", "ps_cum", "ps_max", "ts_max"
+)
+
+asteroid_table_typed <- asteroid_table_typed |> 
+  select(any_of(reorder), everything())
+
+# Use `asteroid_table_typed` dataframe for all visualizations. Modify as needed, but do NOT use `asteroid_table` or `asteroid_summary`.
 ```
 
 ```{r}
@@ -174,18 +189,99 @@ obj_impacts_tbl <- bind_rows(o_payload$data) |>
   mutate(across(everything(), ~na_if(as.character(.x), "")))
 ```
 
+# Potential Impacts Timeline
+
+::: sidebar
+## About This Graph
+
+This graph shows a timeline of possible asteroid impacts based on current data from NASA's "[Sentry: Earth Impact Monitoring](https://cneos.jpl.nasa.gov/sentry/)" system. Each bubble represents a 10-year time window, beginning with the current decade (2020-2029). Bubble sizes increase based on overall number of possible asteroids with impact risks in those timeframes. Bubble sizes are not proportional.
+
+## Data Recency
+
+This data was last updated on <insert refresh date and time here>.
+:::
+
 ```{r}
-#| label: sample-plot
+#| label: impacts-timeline-bubble-plot
 
-# For demonstration purposes; not to be included in our final (at least, not in this iteration).
+bin_width <- 10
 
-ggplot(asteroid_table_typed, aes(x = ip, y = ps_max)) +
-  geom_point(alpha = 0.6) + 
-  scale_x_log10() + 
-  labs(
-    title = "Maximum Palermo Scale vs. Impact Probability",
-    x = "Impact Probability (log10 scale)",
-    y = "Maximum Palermo Scale (ps_max)"
+impacts_parsed <- asteroid_table_typed |> 
+  mutate(
+    range = str_trim(range),
+    range_ok = str_detect(range, "^\\d{4}\\s*-\\s*\\d{4}$")
+  ) |> 
+  filter(range_ok) |> 
+  separate(
+    range,
+    into = c("start_year", "end_year"),
+    sep = "\\s*-\\s*",
+    convert = TRUE,
+    remove = FALSE
+  ) |> 
+  filter(!is.na(start_year), !is.na(end_year), end_year >= start_year)
+
+bin_start <- floor(min(impacts_parsed$start_year) / bin_width) * bin_width
+bin_end <- ceiling(max(impacts_parsed$end_year) / bin_width) * bin_width
+  
+impacts_timeline <- tibble(
+  bin_lo = seq(bin_start, bin_end - bin_width, by = bin_width),
+  bin_hi = bin_lo + bin_width - 1
+) |> 
+  rowwise() |> 
+  mutate(
+    n_objects = sum(impacts_parsed$start_year <= bin_hi & impacts_parsed$end_year >= bin_lo),
+    bin_mid = (bin_lo + bin_hi) / 2,
+    bin_label = paste0(bin_lo, "-", bin_hi)
+  ) |> 
+  ungroup() |> 
+  filter(n_objects > 0) |> 
+  arrange(bin_mid) |> 
+  mutate(
+    y = 0,
+    side = if_else(row_number() %% 2 == 0, "below", "above"),
+    y_label = if_else(side == "above", 0.40, -0.40),
+    y_line_end = if_else(side == "above", 0.24, -0.24),
+    label = paste0(bin_label, "\n(n = ", n_objects, ")")
   )
+
+xmin <- min(impacts_timeline$bin_lo)
+xmax <- max(impacts_timeline$bin_hi)
+
+ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
+  geom_segment(
+    aes(x = xmin, xend = xmax, y = 0, yend = 0),
+    inherit.aes = FALSE,
+    linewidth = 1.1,
+    arrow = arrow(length = unit(0.22, "cm"), type = "closed")
+  ) +
+  geom_segment(
+    aes(xend = bin_mid, yend = y_line_end),
+    linewidth = 0.35, alpha = 0.35
+  ) +
+  geom_point(
+    aes(size = n_objects),
+    shape = 21,
+    fill = "#56B4E9",
+    color = "#56B4E9",
+    alpha = 0.65
+  ) +
+  geom_text(
+    aes(y = y_label, label = label),
+    fontface = "bold", size = 4, lineheight = 0.95) +
+  scale_x_continuous(
+    name = NULL,
+    breaks = NULL,
+    labels = NULL
+  ) +
+  scale_y_continuous(
+    name = NULL,
+    breaks = NULL
+  ) +
+  scale_size(range = c(6, 30), guide = "none") +
+  coord_cartesian(clip = "off") +
+  theme_void(base_size = 14) +
+  theme(
+    plot.margin = margin(25, 25, 25, 25))
 ```
 

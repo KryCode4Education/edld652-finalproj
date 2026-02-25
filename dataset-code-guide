@@ -1,0 +1,10 @@
+fullname : The full name/designation of the object.
+last_obs : Date and time (UTC) of the last observation used in the analysis.
+diameter : This is an estimate (in kilometers) based on the absolute magnitude, usually assuming a uniform spherical body with visual albedo of 0.154 (in accordance with the Palermo Scale) but sometimes using actual measured values if these are available. Since the albedo is rarely measured, the diameter estimate should be considered only an approximate, but in most caases will be accurate to within a factor of two.
+ip : Probability that the tabulated impact will occur. The probability computation is complex and depends on a number of assumptions that are difficult to verify. For these reasons the stated probability can easily be inaccurate by a factor of a few, and occasionally by a factor of ten or more.
+n_imp : Total number of potential impacts resulting from this analysis.
+v_inf : Relative velocity (in kilometers per second) at atmospheric entry neglecting the acceleration caused by the Earth's gravity field, often called the hyperbolic excess velocity.
+range : Range of years in which an impact could occur.
+ps_cum : The cumulative hazard rating according to the Palermo technical impact hazard scale, based on the tabulated impact date, impact probability and impact energy.
+ps_max : Maximum hazard rating according to the Palermo technical impact hazard scale.
+ts_max : Maximum detected hazard rating according to the Torino impact hazard scale, based on the tabulated impact probability and impact energy. The Torino Scale is defined only for potential impacts less than 100 years in the future.
