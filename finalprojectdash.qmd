@@ -194,11 +194,49 @@ obj_impacts_tbl <- bind_rows(o_payload$data) |>
 ::: sidebar
 ## About This Graph
 
-This graph shows a timeline of possible asteroid impacts based on current data from NASA's "[Sentry: Earth Impact Monitoring](https://cneos.jpl.nasa.gov/sentry/)" system. Each bubble represents a 10-year time window, beginning with the current decade (2020-2029). Bubble sizes increase based on overall number of possible asteroids with impact risks in those timeframes. Bubble sizes are not proportional.
+This graph shows a timeline of possible asteroid impacts based on current data from NASA's "[Sentry: Earth Impact Monitoring](https://cneos.jpl.nasa.gov/sentry/)" system. </br></br>Each bubble represents a 10-year time window, beginning with the current decade (2020-2029). Bubble sizes increase based on overall number of possible asteroids with impact risks in those timeframes. Bubble sizes are not proportional.
 
 ## Data Recency
 
-This data was last updated on <insert refresh date and time here>.
+```{r, echo=FALSE, results='asis'}
+render_utc <- format(Sys.time(), tz = "UTC", "%Y-%m-%dT%H:%M:%SZ")
+
+cat(paste0(
+  "<span id='last-updated' data-utc='", render_utc, "'></span><br>",
+  "<span id='next-refresh'></span>"
+))
+```
+
+```{=html}
+<script>
+  (function () {
+    // Read the UTC timestamp embedded by R
+    const el = document.getElementById('last-updated');
+    if (!el) return;
+    
+    const utc = el.getAttribute('data-utc');
+    const last = new Date(utc);
+    
+    // Compute next refresh (daily at 14:00 UTC)
+    const nextUtc = new Date();
+    nextUtc.setUTCHours(14, 0, 0, 0);
+    if (new Date() >= nextUtc) {
+      nextUtc.setUTCDate(nextUtc.getUTCDate() + 1);
+    }
+    
+    // Format in the viewer's local timezone
+    const fmt = new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'long',
+    timeStyle: 'short'
+    });
+    
+    el.textContent = "This data was last updated on " + fmt.format(last) + ".";
+    document.getElementById('next-refresh').textContent = 
+      "Next scheduled refresh: " + fmt.format(nextUtc) + ".";
+  })();
+</script>
+```
+
 :::
 
 ```{r}
@@ -241,7 +279,7 @@ impacts_timeline <- tibble(
     y = 0,
     side = if_else(row_number() %% 2 == 0, "below", "above"),
     y_label = if_else(side == "above", 0.40, -0.40),
-    y_line_end = if_else(side == "above", 0.24, -0.24),
+    y_line_end = if_else(side == "above", 0.32, -0.32),
     label = paste0(bin_label, "\n(n = ", n_objects, ")")
   )
 
@@ -268,17 +306,22 @@ ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
   ) +
   geom_text(
     aes(y = y_label, label = label),
-    fontface = "bold", size = 4, lineheight = 0.95) +
+    size = 2.5,
+    lineheight = 0.95,
+    angle = 45,
+    hjust = 0.5,
+    vjust = 0.5) +
   scale_x_continuous(
     name = NULL,
     breaks = NULL,
-    labels = NULL
+    labels = NULL,
+    expand = expansion(mult = c(0.05, 0.10))
   ) +
   scale_y_continuous(
     name = NULL,
     breaks = NULL
   ) +
-  scale_size(range = c(6, 30), guide = "none") +
+  scale_size(range = c(4, 20), guide = "none") +
   coord_cartesian(clip = "off") +
   theme_void(base_size = 14) +
   theme(
