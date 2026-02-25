@@ -34,9 +34,7 @@ jobs:
 
       - name: Render dashboard
         run: |
-          quarto render finalprojectdash.qmd --to html --output index.html
-          mkdir -p _site
-          mv index.html _site/index.html
+          quarto render finalprojectdash.qmd --output-dir _site
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
