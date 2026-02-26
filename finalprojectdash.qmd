@@ -331,12 +331,7 @@ ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
     plot.margin = margin(25, 25, 25, 25))
 ```
 
-# Sentry Object Table
-
-## Click an object name to view details
-
-::: {.columns}
-::: {.column width="60%"}
+# Sentry Objects Table
 
 ```{r}
 #| label: sentry-object-table
@@ -361,20 +356,39 @@ datatable(
   obj_tbl,
   rownames = FALSE,
   selection = "single",
+  colnames = c(
+    "Designation",
+    "Object",
+    "Impact Year Range",
+    "Potential Impacts",
+    "Impact Probability (cumulative)",
+    "Velocity (km/s)",
+    "Est. Diameter (km)",
+    "Palermo Scale (cum.)",
+    "Palermo Scale (max.)",
+    "Torino Scale (max.)",
+    "Last Observed"
+  ),
   options = list(
-    pagelength = 15,
+    pageLength = 10,
+    paging = TRUE,
+    info = TRUE,
+    searching = TRUE,
+    lengthMenu = list(c(10,25,50,100), c("10", "25", "50", "100")),
+    lengthChange = TRUE,
     autoWidth = TRUE,
     scrollX = TRUE,
+    dom = "<'dt-top'lfr>t<'dt-bottom'ip>",
+    pagingType = "simple_numbers",
     columnDefs = list(list(targets = 0, visible = FALSE))
   ),
   callback = DT::JS("
-    // When row is clicked, fetch details via the Sentry API and render to the panel.
     table.on('click.dt', 'tr', function() {
       var row = table.row(this);
       if (!row || !row.data()) return;
       
       var data = row.data();
-      var des = data[0]; // hidden 'designation'
+      var des = data[0];
       
       var panel = document.getElementById('sentry-details');
       panel.innerHTML = '<div style=\"opacity:.8;\">Loading details for <b>' + des + '</b>...</div>';
@@ -389,14 +403,12 @@ datatable(
             return;
           }
           
-          // payload.summary is a list; payload.data is the impact table
           var s = (payload.summary && payload.summary.length) ? payload.summary[0] : null;
           if (!s) {
             panel.innerHTML = '<div>No summary available for ' + des + '.</div>';
             return;
           }
           
-          // Build a compact summary
           var html = '';
           html += '<h3 style=\"margin-top:0;\">' + (s.fullname || des) + '</h3>';
           html += '<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:8px;\">';
@@ -410,7 +422,6 @@ datatable(
           html += '<div><b>Palermo max:</b> ' + (s.ps_max ?? '') + '</div>';
           html += '</div>';
           
-          // Build a small impacts table (first ~10 rows for readability)
           var impacts = payload.data || [];
           html += '<h4 style=\"margin-top:14px;\">Impact events (sample)</h4>';
           
@@ -437,11 +448,9 @@ datatable(
           panel.innerHTML = html;
         })
         .catch(err => {
-        panel.innerHTML = '<div style=\"color:#b00020;\">Fetch failed: ' + err + '</div>';
+          panel.innerHTML = '<div style=\"color:#b00020;\">Fetch failed: ' + err + '</div>';
+        });
       });
-    })
-    })
   ")
 )
 ```
-
