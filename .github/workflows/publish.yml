@@ -31,6 +31,8 @@ jobs:
             jsonlite
             tidyverse
             scales
+            DT
+            htmltools
 
       - name: Render dashboard
         run: |
