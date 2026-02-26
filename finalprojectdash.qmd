@@ -150,69 +150,6 @@ asteroid_table_typed <- asteroid_table_typed |>
 ```
 
 ```{r}
-# Ramtin's bar chart for the Palermo scale comparison
-
-#| label: palermo-bar-chart
-#| warning: false
-#| fig-cap: "Distribution of monitored asteroids across Palermo Scale risk categories"
-
-# To create the Palermo Scale categories
-asteroid_risk <- asteroid_table_typed |>
-  mutate(
-    ps_cum_cat = case_when(
-      ps_cum > 0 ~ ">0",
-      ps_cum <= 0 & ps_cum > -2 ~ ">0 to =-2",
-      ps_cum <= -2 & ps_cum > -4 ~ ">-2 to =-4",
-      ps_cum <= -4 & ps_cum > -6 ~ ">-4 to =-6",
-      ps_cum <= -6 ~ "<=-6",
-      TRUE ~ NA_character_
-    ),
-    ps_max_cat = case_when(
-      ps_max > 0 ~ ">0",
-      ps_max <= 0 & ps_max > -2 ~ ">0 to =-2",
-      ps_max <= -2 & ps_max > -4 ~ ">-2 to =-4",
-      ps_max <= -4 & ps_max > -6 ~ ">-4 to =-6",
-      ps_max <= -6 ~ "<=-6",
-      TRUE ~ NA_character_
-    )
-  )
-
-# To convert to long format for comparison
-risk_long <- asteroid_risk |>
-  select(ps_cum_cat, ps_max_cat) |>
-  pivot_longer(
-    cols = everything(),
-    names_to = "scale",
-    values_to = "category"
-  ) |>
-  filter(!is.na(category))
-
-# To order categories logically
-risk_long$category <- factor(
-  risk_long$category,
-  levels = c(">0", ">0 to =-2", ">-2 to =-4", ">-4 to =-6", "<=-6")
-)
-
-# To count objects per category
-risk_counts <- risk_long |>
-  count(scale, category)
-
-ggplot(risk_counts,
-       aes(x = category, y = n, fill = scale)) +
-  geom_col(position = "dodge") +
-  scale_y_continuous(labels = comma) +
-  labs(
-    x = "Palermo Scale Risk Category",
-    y = "Number of Asteroids",
-    fill = "Palermo Scale",
-    title = "Relative Risk Distribution of Monitored Near-Earth Asteroids",
-    subtitle = "Comparison of cumulative (ps_cum) and maximum (ps_max) Palermo Scale values"
-  ) +
-  theme_minimal(base_size = 12)
-
-```
-
-```{r}
 #| label: sentry-summary-s
 #| include: false
 
@@ -392,6 +329,71 @@ ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
   theme_void(base_size = 14) +
   theme(
     plot.margin = margin(25, 25, 25, 25))
+```
+
+# Palermo Scale Risk Distribution
+
+```{r}
+# Ramtin's bar chart for the Palermo scale comparison
+
+#| label: palermo-bar-chart
+#| warning: false
+#| fig-cap: "Distribution of monitored asteroids across Palermo Scale risk categories"
+
+# To create the Palermo Scale categories
+asteroid_risk <- asteroid_table_typed |>
+  mutate(
+    ps_cum_cat = case_when(
+      ps_cum > 0 ~ ">0",
+      ps_cum <= 0 & ps_cum > -2 ~ ">0 to =-2",
+      ps_cum <= -2 & ps_cum > -4 ~ ">-2 to =-4",
+      ps_cum <= -4 & ps_cum > -6 ~ ">-4 to =-6",
+      ps_cum <= -6 ~ "<=-6",
+      TRUE ~ NA_character_
+    ),
+    ps_max_cat = case_when(
+      ps_max > 0 ~ ">0",
+      ps_max <= 0 & ps_max > -2 ~ ">0 to =-2",
+      ps_max <= -2 & ps_max > -4 ~ ">-2 to =-4",
+      ps_max <= -4 & ps_max > -6 ~ ">-4 to =-6",
+      ps_max <= -6 ~ "<=-6",
+      TRUE ~ NA_character_
+    )
+  )
+
+# To convert to long format for comparison
+risk_long <- asteroid_risk |>
+  select(ps_cum_cat, ps_max_cat) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "scale",
+    values_to = "category"
+  ) |>
+  filter(!is.na(category))
+
+# To order categories logically
+risk_long$category <- factor(
+  risk_long$category,
+  levels = c(">0", ">0 to =-2", ">-2 to =-4", ">-4 to =-6", "<=-6")
+)
+
+# To count objects per category
+risk_counts <- risk_long |>
+  count(scale, category)
+
+ggplot(risk_counts,
+       aes(x = category, y = n, fill = scale)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = comma) +
+  labs(
+    x = "Palermo Scale Risk Category",
+    y = "Number of Asteroids",
+    fill = "Palermo Scale",
+    title = "Relative Risk Distribution of Monitored Near-Earth Asteroids",
+    subtitle = "Comparison of cumulative (ps_cum) and maximum (ps_max) Palermo Scale values"
+  ) +
+  theme_minimal(base_size = 12)
+
 ```
 
 # Sentry Objects Table
