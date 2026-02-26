@@ -1,0 +1,9 @@
+---
+title: "Sentry Object Table"
+format:
+  dashboard:
+    theme: spacelab
+runtime: shiny
+execute:
+  freeze: false
+---

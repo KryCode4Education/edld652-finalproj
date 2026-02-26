@@ -17,6 +17,9 @@ library(httr2) # For creating and submitting HTTP requests.
 library(jsonlite) # For bidirectional mapping between JSON data and R data.
 library(tidyverse) # For dplyr, purrr, tidyr, readr, and lubridate.
 library(scales) # For aesthetic changes and methods for automatically determining breaks and labels for axes and legends.
+library(knitr) # For report generation.
+library(DT) # For the table.
+library(htmltools) # For table interactivity.
 
 ```
 
@@ -50,7 +53,7 @@ sentry_get <- function(query = list()) {
   ver <- if (is.null(ver)) NA_character_ else as.character(ver)[1]
   
   if (!is.na(ver) && ver != "2.0") {
-    warning(springf(
+    warning(springt(
       "Sentry API signature version is %s (docs show 2.0). Format may differ.",
       ver
     ))
@@ -128,7 +131,8 @@ asteroid_table_typed <- asteroid_table |>
     last_obs_jd = parse_double(last_obs_jd),
     n_imp = as.integer(n_imp),
     last_obs = as.Date(last_obs)
-  )
+  ) |> 
+  mutate(designation = des)
 
 asteroid_table_typed$last_obs_jd <- NULL
 asteroid_table_typed$id <- NULL
@@ -146,47 +150,22 @@ asteroid_table_typed <- asteroid_table_typed |>
 ```
 
 ```{r}
-#| label: virtual-impactors
+#| label: sentry-summary-s
 #| include: false
 
-# This is a possible limiting of the dataset for visualization purposes.
+s_payload <- sentry_get(list())
 
-v_payload <- sentry_get(list(all = "1", `ip-min` = "1e-6"))
-
-vi_tbl <- bind_rows(v_payload$data) |> 
+sentry_summary_tbl <- bind_rows(s_payload$data) |> 
   as_tibble(.name_repair = "unique") |> 
   mutate(across(everything(), ~na_if(as.character(.x), "")))
 
-num_cols <- c(
-  "ip", "ps", "ts", "h", "diameter", "v_inf", "last_obs_jd", "sigma", "width", "stretch", "energy", "t_sigma"
-)
-date_cols <- c("last_obs")
-
-present_num_cols <- intersect(names(vi_tbl), num_cols)
-present_date_cols <- intersect(names(vi_tbl), date_cols)
-
-vi_tbl_typed <- vi_tbl |> 
+objects_after_2126_tbl <- sentry_summary_tbl |> 
   mutate(
-    across(all_of(present_num_cols), readr::parse_double),
-    across(all_of(present_date_cols), as.Date)
-)
-```
-
-```{r}
-#| label: obj-details
-#| include: false
-
-# This allows for accessing specific objects based on their designation. At current, "101955" is Bennu.
-
-o_payload <- sentry_get(list(des = "101955"))
-
-obj_summary_tbl <- bind_rows(o_payload$summary) |> 
-  as_tibble(.name_repair = "unique") |> 
-  mutate(across(everything(), ~na_if(as.character(.x), "")))
-
-obj_impacts_tbl <- bind_rows(o_payload$data) |> 
-  as_tibble(.name_repair = "unique") |> 
-  mutate(across(everything(), ~na_if(as.character(.x), "")))
+    end_year = suppressWarnings(as.integer(str_extract(range, "(?<=-)\\d{4}$")))
+  ) |> 
+  filter(!is.na(end_year), end_year > 2126) |> 
+  arrange(end_year, fullname) |> 
+  select(fullname, range)
 ```
 
 # Potential Impacts Timeline
@@ -194,7 +173,30 @@ obj_impacts_tbl <- bind_rows(o_payload$data) |>
 ::: sidebar
 ## About This Graph
 
-This graph shows a timeline of possible asteroid impacts based on current data from NASA's "[Sentry: Earth Impact Monitoring](https://cneos.jpl.nasa.gov/sentry/)" system. </br></br>Each bubble represents a 10-year time window, beginning with the current decade (2020-2029). Bubble sizes increase based on overall number of possible asteroids with impact risks in those timeframes. Bubble sizes are not proportional.
+This graph shows a timeline of possible asteroid impacts based on current data from NASA's "[Sentry: Earth Impact Monitoring](https://cneos.jpl.nasa.gov/sentry/)" system.
+
+Each bubble represents a 10-year time window, beginning with the current decade (2020-2029). Bubble sizes increase based on overall number of possible asteroids with impact risks in those timeframes. Bubble sizes are not proportional.
+
+**A note**: No data is provided after the year 2126 as Sentry only provides tracking information for objects with possible impacts in a 100-year window. Anomalies that do appear are excluded from this visualization but remain in the original dataset potentially as the result of prominent media presence, as is the case with the asteroid 101955 Bennu. The objects are as follows:
+
+```{r}
+#| label: after-2126-table
+#| echo: false
+#| results: asis
+
+if (nrow(objects_after_2126_tbl) == 0) {
+  cat("<div style='font-size:0.9em;opacity:0.8;'>None.</div>")
+} else {
+  knitr::kable(
+    objects_after_2126_tbl,
+    format = "html",
+    col.names = c("Object", "Impact range"),
+    escape = TRUE
+  )
+}
+```
+
+`r nrow(objects_after_2126_tbl)`
 
 ## Data Recency
 
@@ -241,6 +243,7 @@ cat(paste0(
 
 ```{r}
 #| label: impacts-timeline-bubble-plot
+#| warning: false
 
 bin_width <- 10
 
@@ -326,5 +329,119 @@ ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
   theme_void(base_size = 14) +
   theme(
     plot.margin = margin(25, 25, 25, 25))
+```
+
+# Sentry Object Table
+
+## Click an object name to view details
+
+::: {.columns}
+::: {.column width="60%"}
+
+```{r}
+#| label: sentry-object-table
+#| echo: false
+
+obj_tbl <- asteroid_table_typed |> 
+  transmute(
+    designation,
+    fullname,
+    range,
+    n_imp,
+    ip,
+    v_inf,
+    diameter,
+    ps_cum,
+    ps_max,
+    ts_max,
+    last_obs
+  )
+
+datatable(
+  obj_tbl,
+  rownames = FALSE,
+  selection = "single",
+  options = list(
+    pagelength = 15,
+    autoWidth = TRUE,
+    scrollX = TRUE,
+    columnDefs = list(list(targets = 0, visible = FALSE))
+  ),
+  callback = DT::JS("
+    // When row is clicked, fetch details via the Sentry API and render to the panel.
+    table.on('click.dt', 'tr', function() {
+      var row = table.row(this);
+      if (!row || !row.data()) return;
+      
+      var data = row.data();
+      var des = data[0]; // hidden 'designation'
+      
+      var panel = document.getElementById('sentry-details');
+      panel.innerHTML = '<div style=\"opacity:.8;\">Loading details for <b>' + des + '</b>...</div>';
+      
+      var url = 'https://ssd-api.jpl.nasa.gov/sentry.api?des=' + encodeURIComponent(des);
+      
+      fetch(url)
+        .then(r => r.json())
+        .then(payload => {
+          if (payload.error) {
+            panel.innerHTML = '<div style=\"color:#b00020;\">API error: ' + payload.error + '</div>';
+            return;
+          }
+          
+          // payload.summary is a list; payload.data is the impact table
+          var s = (payload.summary && payload.summary.length) ? payload.summary[0] : null;
+          if (!s) {
+            panel.innerHTML = '<div>No summary available for ' + des + '.</div>';
+            return;
+          }
+          
+          // Build a compact summary
+          var html = '';
+          html += '<h3 style=\"margin-top:0;\">' + (s.fullname || des) + '</h3>';
+          html += '<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:8px;\">';
+          html += '<div><b>Year range:</b> ' + (s.range ?? '') + '</div>';
+          html += '<div><b>Potential impacts:</b> ' + (s.n_imp ?? '') + '</div>';
+          html += '<div><b>Cumulative IP:</b> ' + (s.ip ?? '') + '</div>';
+          html += '<div><b>V∞ (km/s):</b> ' + (s.v_inf ?? '') + '</div>';
+          html += '<div><b>Diameter (km):</b> ' + (s.diameter ?? '') + '</div>';
+          html += '<div><b>Torino max:</b> ' + (s.ts_max ?? '') + '</div>';
+          html += '<div><b>Palermo cum:</b> ' + (s.ps_cum ?? '') + '</div>';
+          html += '<div><b>Palermo max:</b> ' + (s.ps_max ?? '') + '</div>';
+          html += '</div>';
+          
+          // Build a small impacts table (first ~10 rows for readability)
+          var impacts = payload.data || [];
+          html += '<h4 style=\"margin-top:14px;\">Impact events (sample)</h4>';
+          
+          if (!impacts.length) {
+            html += '<div style=\"opacity:.8;\">No impact-event rows returned.</div>';
+          } else {
+            var head = Object.keys(impacts[0]);
+            var showCols = ['date', 'ip', 'ps', 'ts', 'sigma', 'energy']; // best-effort
+            var cols = head.filter(h => showCols.includes(h)).slice(0, 6);
+            if (!cols.length) cols = head.slice(0, 6);
+
+            html += '<table style=\"width:100%;border-collapse:collapse;\">';
+            html += '<thead><tr>' + cols.map(c => '<th style=\"text-align:left;border-bottom:1px solid #ddd;padding:4px;\">' + c + '</th>').join('') + '</tr></thead>';
+            html += '<tbody>';
+
+            impacts.slice(0, 10).forEach(row => {
+              html += '<tr>' + cols.map(c => '<td style=\"border-bottom:1px solid #f0f0f0;padding:4px;\">' + (row[c] ?? '') + '</td>').join('') + '</tr>';
+            });
+
+            html += '</tbody></table>';
+            html += '<div style=\"margin-top:6px;opacity:.75;font-size:.9em;\">Showing 10 rows; API returned ' + impacts.length + '.</div>';
+          }
+          
+          panel.innerHTML = html;
+        })
+        .catch(err => {
+        panel.innerHTML = '<div style=\"color:#b00020;\">Fetch failed: ' + err + '</div>';
+      });
+    })
+    })
+  ")
+)
 ```
 
