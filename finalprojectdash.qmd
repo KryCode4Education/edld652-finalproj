@@ -1,10 +1,11 @@
 ---
-title: "EDLD 652 Final Project"
+title: "Understanding Near Earth Objects"
 author: James Phillips & Ramtin Ranjpour
 output-file: index.html
 format:
   dashboard:
-    theme: spacelab
+    theme: 
+      - spacelab
 execute:
   freeze: false
 ---
@@ -168,12 +169,40 @@ objects_after_2126_tbl <- sentry_summary_tbl |>
   select(fullname, range)
 ```
 
+# About This Project
+
+At any given moment, experts in space science are tracking over 2,000 near-Earth objects (NEOs) that could pose a potential risk to life on Earth due to their orbital trajectories, estimated diameters, and projected velocities. [NASA's JPL Sentry System](https://cneos.jpl.nasa.gov/sentry/) is an Earth impact monitoring system designed for comprehensive observation and collection of data regarding these objects. But how do people not intimately familiar with space science concepts engage with this information? This project seeks to make data regarding possible impact events more approachable to the everyday person, presenting different elements of Sentry's data in ways that better contextualize the actual risk of currently monitored NEOs, the range in which potential impacts might occur, and the scale of risk currently associated with said objects.
+
+## Some Data Explainers
+
+While some of the data in this project may be self-explanatory, we want to be exhaustive in providing explanations for any possible data used so as to reduce confusion and create better accessibility with this data. Each item you might encounter while exploring these visualizations, or the data table itself, is listed below:
+
+[Object]{style="font-size: 18px;font-weight: bold;"}: The assigned provisional designation, or informal name, of the NEO. Typically, NEOs are assigned a designation based on when the object was initially monitored. This follows a standard formula: the *year of discovery* followed by a two-letter code indicating the *half-month of discovery*, including a subscript to help identify *what position that object is in the given half-month in terms of order of discovery*. Our example: asteroid 2024 YR4, which gained [significant media traction](https://www.esa.int/Space_Safety/Planetary_Defence/ESA_actively_monitoring_near-Earth_asteroid_2024_YR4) in early 2025 due to an anomalously high chance (3.1%) of hitting Earth in 2032. It's designation was determined because it was detected in 2024 (2024), in the second half of the month of December (Y), and was the 117th provisional designation assigned in that half-month period (R4). More information on provisional designations can be found [here](https://en.wikipedia.org/wiki/Provisional_designation_in_astronomy).
+
+[Impact Year Range]{style="font-size: 18px;font-weight: bold;"}: The range of years in which an impact could occur. These ranges tend to fluctuate as further observations of the object are made.
+
+[Potential Impacts]{style="font-size: 18px;font-weight: bold;"}: The number of possible impacts the object could have in the given year range. This is based on how many "passes" the object will make by Earth in its orbit (as in, each orbit could present a possible impact risk, but not always).
+
+[Impact Probability (cumulative)]{style="font-size: 18px;font-weight: bold;"}: Probability that the possible impact will occur. Calculating this probability is complex and depends on a number of assumptions that are difficult to verify. For these reasons, the stated probability can easily be inaccurate by a factor of a few, and occasionally by a factor of ten or more. Returning to our example of 2024 YR4, at the time of this writing (March 3, 2026), 2024 YR4 has a *cumulative impact probability* of 8.1e-6. Other ways of interpreting this number? A 0.00081% chance of impact. A significant difference from when it was estimated to have a 3.1% chance! This is why the stressing of variability is important.
+
+[Velocity (km/s)]{style="font-size: 18px;font-weight: bold;"}: This is the calculated velocity of the asteroid relative to the Earth when it is at an effectively infinite distance, or not currently experiencing gravitational influence from the object, as represented in kilometers per second. This is also known as the *V*~∞~.
+
+[Est. Diameter (km)]{style="font-size: 18px;font-weight: bold;"}: This is the best guess of the object's diameter in kilometers. We say "best guess" because asteroids are only observed when they reflect light back to us on Earth, and *visible light* can present as the same level of brightness from objects of vastly different sizes. Infrared light is also observed of NEOs to more accurately determine their possible diameter. As well, NEOs do not present as spheres like planets, but in various shapes, which further increases difficulty in accurately determining their diameter given the different "views" we might get of the object at its imaging moment.
+
+[Palermo Scale (cum.)]{style="font-size: 18px;font-weight: bold;"}: This is the cumulative hazard rating according to the Palermo technical impact hazard scale. Generally, if a scale value is *less than* -2, there are likely minimal risks posed by the object. Scale values *between* 0 and -2 are worth careful consideration. Scale values that are *greater than* 0 warrant serious attention (and fortunately, nothing at current falls anywhere near this). The Palermo Scale is a logarithmic scale that is also designed to compare the likelihood of the object's detected possible impact with the average risk posed by objects of similar size (or larger) over the year range until the date of possible impact, which is known as the *background risk*. So, a Palermo Scale value of -2 means that object's possible hazard is 1% as likely as *any* other background risk of comparable size in the intervening years, while a value of 0 means the object is equally as much of a risk as other background risks, and a value of 2 indicates an event that is 10,000% more likely to occur than other background risks.
+
+[Palermo Scale (max.)]{style="font-size: 18px;font-weight: bold;"}: This is the maximum possible measured Palermo Scale rating for a given object. This usually only presents when an object has more than one possible impact in its year range.
+
+[Torino Scale (max.)]{style="font-size: 18px;font-weight: bold;"}: This is the maximum detected hazard rating according to the Torino impact hazard scale, based on the calculated impact probability and impact energy. The Torino Scale is defined only for potential impacts less than 100 years in the future. Unlike the Palermo Scale, the Torino Scale was developed to be more approachable to the public and is instead based on a range of 0-10, where: 0 indicates *no hazard* and is generally assigned to objects that will burn up in the atmosphere; 1 indicates *normal* behavior of the object with no discernible level of danger; 2-4 indicates the object *merits attention* by astronomers due to possible impact risk and subsequent damage; 5-7 indicates a *threatening* status from the object where it poses a potentially unprecedented threat; and 8-10, which indicate *certainty* of collision.
+
+[Last Observed]{style="font-size: 18px;font-weight: bold;"}: This is the last time the object was observed and its data updated in Sentry.
+
 # Potential Impacts Timeline
 
 ::: sidebar
 ## About This Graph
 
-This graph shows a timeline of possible asteroid impacts based on current data from NASA's "[Sentry: Earth Impact Monitoring](https://cneos.jpl.nasa.gov/sentry/)" system.
+This graph shows a timeline of possible asteroid impacts based on current data from Sentry.
 
 Each bubble represents a 10-year time window, beginning with the current decade (2020-2029). Bubble sizes increase based on overall number of possible asteroids with impact risks in those timeframes. Bubble sizes are not proportional.
 
@@ -234,11 +263,10 @@ cat(paste0(
     
     el.textContent = "This data was last updated on " + fmt.format(last) + ".";
     document.getElementById('next-refresh').textContent = 
-      "Next scheduled refresh: " + fmt.format(nextUtc) + ".";
+      "Next scheduled update: " + fmt.format(nextUtc) + ".";
   })();
 </script>
 ```
-
 :::
 
 ```{r}
@@ -281,8 +309,8 @@ impacts_timeline <- tibble(
   mutate(
     y = 0,
     side = if_else(row_number() %% 2 == 0, "below", "above"),
-    y_label = if_else(side == "above", 0.40, -0.40),
-    y_line_end = if_else(side == "above", 0.32, -0.32),
+    y_label = if_else(side == "above", 0.30, -0.30),
+    y_line_end = if_else(side == "above", 0.27, -0.27),
     label = paste0(bin_label, "\n(n = ", n_objects, ")")
   )
 
@@ -328,19 +356,21 @@ ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
   coord_cartesian(clip = "off") +
   theme_void(base_size = 14) +
   theme(
-    plot.margin = margin(25, 25, 25, 25))
+    plot.margin = margin(25, 25, 25, 25),
+    plot.title = element_text(hjust = 0.5, margin = margin(b = 20))
+    ) +
+  labs(
+    title = "Timeline of Possible NEO Impacts Between 2026 and 2289"
+  )
 ```
 
 # Palermo Scale Risk Distribution
 
 ```{r}
-# Ramtin's bar chart for the Palermo scale comparison
-
 #| label: palermo-bar-chart
 #| warning: false
 #| fig-cap: "Distribution of monitored asteroids across Palermo Scale risk categories"
 
-# To create the Palermo Scale categories
 asteroid_risk <- asteroid_table_typed |>
   mutate(
     ps_cum_cat = case_when(
@@ -361,7 +391,6 @@ asteroid_risk <- asteroid_table_typed |>
     )
   )
 
-# To convert to long format for comparison
 risk_long <- asteroid_risk |>
   select(ps_cum_cat, ps_max_cat) |>
   pivot_longer(
@@ -371,13 +400,11 @@ risk_long <- asteroid_risk |>
   ) |>
   filter(!is.na(category))
 
-# To order categories logically
 risk_long$category <- factor(
   risk_long$category,
   levels = c(">0", ">0 to =-2", ">-2 to =-4", ">-4 to =-6", "<=-6")
 )
 
-# To count objects per category
 risk_counts <- risk_long |>
   count(scale, category)
 
