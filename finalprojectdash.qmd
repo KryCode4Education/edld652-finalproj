@@ -451,7 +451,7 @@ ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
 ```{r}
 #| label: palermo-bar-chart
 #| warning: false
-#| fig-cap: "Distribution of monitored asteroids across Palermo Scale risk categories"
+#| fig-cap: "Distribution of monitored objects across Palermo Scale risk categories"
 
 asteroid_risk <- asteroid_table_typed |>
   mutate(
@@ -482,9 +482,15 @@ risk_long <- asteroid_risk |>
   ) |>
   filter(!is.na(category))
 
+risk_long$scale <- recode(
+  risk_long$scale,
+  ps_cum_cat = "PS Cumulative",
+  ps_max_cat = "PS Maximum"
+)
+
 risk_long$category <- factor(
   risk_long$category,
-  levels = c(">0", ">0 to =-2", ">-2 to =-4", ">-4 to =-6", "<=-6")
+  levels = c("<=-6", ">-4 to =-6", ">-2 to =-4", ">0 to =-2", ">0")
 )
 
 risk_counts <- risk_long |>
@@ -493,7 +499,7 @@ risk_counts <- risk_long |>
 ggplot(risk_counts,
        aes(x = category, y = n, fill = scale)) +
   geom_col(position = "dodge") +
-  scale_y_continuous(labels = comma) +
+  scale_y_continuous(labels = scales::comma) +
   labs(
     x = "Palermo Scale Risk Category",
     y = "Number of Asteroids",
