@@ -21,6 +21,9 @@ library(scales) # For aesthetic changes and methods for automatically determinin
 library(knitr) # For report generation.
 library(DT) # For the table.
 library(htmltools) # For table interactivity.
+library(flexdashboard) # For the table explainer.
+library(bslib) # For the table explainer.
+library(bsicons) # For the table explainer.
 
 ```
 
@@ -173,30 +176,6 @@ objects_after_2126_tbl <- sentry_summary_tbl |>
 
 At any given moment, experts in space science are tracking over 2,000 near-Earth objects (NEOs) that could pose a potential risk to life on Earth due to their orbital trajectories, estimated diameters, and projected velocities. [NASA's JPL Sentry System](https://cneos.jpl.nasa.gov/sentry/) is an Earth impact monitoring system designed for comprehensive observation and collection of data regarding these objects. But how do people not intimately familiar with space science concepts engage with this information? This project seeks to make data regarding possible impact events more approachable to the everyday person, presenting different elements of Sentry's data in ways that better contextualize the actual risk of currently monitored NEOs, the range in which potential impacts might occur, and the scale of risk currently associated with said objects.
 
-## Some Data Explainers
-
-While some of the data in this project may be self-explanatory, we want to be exhaustive in providing explanations for any possible data used so as to reduce confusion and create better accessibility with this data. Each item you might encounter while exploring these visualizations, or the data table itself, is listed below:
-
-[Object]{style="font-size: 18px;font-weight: bold;"}: The assigned provisional designation, or informal name, of the NEO. Typically, NEOs are assigned a designation based on when the object was initially monitored. This follows a standard formula: the *year of discovery* followed by a two-letter code indicating the *half-month of discovery*, including a subscript to help identify *what position that object is in the given half-month in terms of order of discovery*. Our example: asteroid 2024 YR4, which gained [significant media traction](https://www.esa.int/Space_Safety/Planetary_Defence/ESA_actively_monitoring_near-Earth_asteroid_2024_YR4) in early 2025 due to an anomalously high chance (3.1%) of hitting Earth in 2032. It's designation was determined because it was detected in 2024 (2024), in the second half of the month of December (Y), and was the 117th provisional designation assigned in that half-month period (R4). More information on provisional designations can be found [here](https://en.wikipedia.org/wiki/Provisional_designation_in_astronomy).
-
-[Impact Year Range]{style="font-size: 18px;font-weight: bold;"}: The range of years in which an impact could occur. These ranges tend to fluctuate as further observations of the object are made.
-
-[Potential Impacts]{style="font-size: 18px;font-weight: bold;"}: The number of possible impacts the object could have in the given year range. This is based on how many "passes" the object will make by Earth in its orbit (as in, each orbit could present a possible impact risk, but not always).
-
-[Impact Probability (cumulative)]{style="font-size: 18px;font-weight: bold;"}: Probability that the possible impact will occur. Calculating this probability is complex and depends on a number of assumptions that are difficult to verify. For these reasons, the stated probability can easily be inaccurate by a factor of a few, and occasionally by a factor of ten or more. Returning to our example of 2024 YR4, at the time of this writing (March 3, 2026), 2024 YR4 has a *cumulative impact probability* of 8.1e-6. Other ways of interpreting this number? A 0.00081% chance of impact. A significant difference from when it was estimated to have a 3.1% chance! This is why the stressing of variability is important.
-
-[Velocity (km/s)]{style="font-size: 18px;font-weight: bold;"}: This is the calculated velocity of the asteroid relative to the Earth when it is at an effectively infinite distance, or not currently experiencing gravitational influence from the object, as represented in kilometers per second. This is also known as the *V*~∞~.
-
-[Est. Diameter (km)]{style="font-size: 18px;font-weight: bold;"}: This is the best guess of the object's diameter in kilometers. We say "best guess" because asteroids are only observed when they reflect light back to us on Earth, and *visible light* can present as the same level of brightness from objects of vastly different sizes. Infrared light is also observed of NEOs to more accurately determine their possible diameter. As well, NEOs do not present as spheres like planets, but in various shapes, which further increases difficulty in accurately determining their diameter given the different "views" we might get of the object at its imaging moment.
-
-[Palermo Scale (cum.)]{style="font-size: 18px;font-weight: bold;"}: This is the cumulative hazard rating according to the Palermo technical impact hazard scale. Generally, if a scale value is *less than* -2, there are likely minimal risks posed by the object. Scale values *between* 0 and -2 are worth careful consideration. Scale values that are *greater than* 0 warrant serious attention (and fortunately, nothing at current falls anywhere near this). The Palermo Scale is a logarithmic scale that is also designed to compare the likelihood of the object's detected possible impact with the average risk posed by objects of similar size (or larger) over the year range until the date of possible impact, which is known as the *background risk*. So, a Palermo Scale value of -2 means that object's possible hazard is 1% as likely as *any* other background risk of comparable size in the intervening years, while a value of 0 means the object is equally as much of a risk as other background risks, and a value of 2 indicates an event that is 10,000% more likely to occur than other background risks.
-
-[Palermo Scale (max.)]{style="font-size: 18px;font-weight: bold;"}: This is the maximum possible measured Palermo Scale rating for a given object. This usually only presents when an object has more than one possible impact in its year range.
-
-[Torino Scale (max.)]{style="font-size: 18px;font-weight: bold;"}: This is the maximum detected hazard rating according to the Torino impact hazard scale, based on the calculated impact probability and impact energy. The Torino Scale is defined only for potential impacts less than 100 years in the future. Unlike the Palermo Scale, the Torino Scale was developed to be more approachable to the public and is instead based on a range of 0-10, where: 0 indicates *no hazard* and is generally assigned to objects that will burn up in the atmosphere; 1 indicates *normal* behavior of the object with no discernible level of danger; 2-4 indicates the object *merits attention* by astronomers due to possible impact risk and subsequent damage; 5-7 indicates a *threatening* status from the object where it poses a potentially unprecedented threat; and 8-10, which indicate *certainty* of collision.
-
-[Last Observed]{style="font-size: 18px;font-weight: bold;"}: This is the last time the object was observed and its data updated in Sentry.
-
 # Potential Impacts Timeline
 
 ::: sidebar
@@ -204,7 +183,7 @@ While some of the data in this project may be self-explanatory, we want to be ex
 
 This graph shows a timeline of possible asteroid impacts based on current data from Sentry.
 
-Each bubble represents a 10-year time window, beginning with the current decade (2020-2029). Bubble sizes increase based on overall number of possible asteroids with impact risks in those timeframes. Bubble sizes are not proportional.
+Each bubble represents a 10-year time window, beginning with the current decade (2020-2029). Bubble sizes increase based on overall number of possible asteroids with impact risks in those timeframes.
 
 **A note**: No data is provided after the year 2126 as Sentry only provides tracking information for objects with possible impacts in a 100-year window. Anomalies that do appear are excluded from this visualization but remain in the original dataset potentially as the result of prominent media presence, as is the case with the asteroid 101955 Bennu. The objects are as follows:
 
@@ -269,8 +248,111 @@ cat(paste0(
 ```
 :::
 
+## {.tabset}
+
+### Updated
+
 ```{r}
-#| label: impacts-timeline-bubble-plot
+#| label: impacts-timeline-bubble-plot-update
+#| warning: false
+
+bin_width <- 10
+
+impacts_parsed <- asteroid_table_typed |> 
+  mutate(
+    range = str_trim(range),
+    range_ok = str_detect(range, "^\\d{4}\\s*-\\s*\\d{4}$")
+  ) |> 
+  filter(range_ok) |> 
+  separate(
+    range,
+    into = c("start_year", "end_year"),
+    sep = "\\s*-\\s*",
+    convert = TRUE,
+    remove = FALSE
+  ) |> 
+  filter(!is.na(start_year), !is.na(end_year), end_year >= start_year)
+
+bin_start <- floor(min(impacts_parsed$start_year) / bin_width) * bin_width
+bin_end <- ceiling(max(impacts_parsed$end_year) / bin_width) * bin_width
+  
+impacts_timeline <- tibble(
+  bin_lo = seq(bin_start, bin_end - bin_width, by = bin_width),
+  bin_hi = bin_lo + bin_width - 1
+) |> 
+  rowwise() |> 
+  mutate(
+    n_objects = sum(impacts_parsed$start_year <= bin_hi & impacts_parsed$end_year >= bin_lo),
+    bin_mid = (bin_lo + bin_hi) / 2,
+    bin_label = paste0(bin_lo, "-", bin_hi)
+  ) |> 
+  ungroup() |> 
+  filter(n_objects > 0) |> 
+  filter(bin_hi <= 2129) |> 
+  arrange(bin_mid) |> 
+  mutate(
+    y = 0,
+    side = if_else(row_number() %% 2 == 0, "below", "above"),
+    y_label = if_else(side == "above", 0.30, -0.30),
+    y_line_end = if_else(side == "above", 0.27, -0.27),
+    label = paste0(bin_label, "\n(n = ", n_objects, ")")
+  )
+
+xmin <- min(impacts_timeline$bin_lo)
+xmax <- max(impacts_timeline$bin_hi)
+
+ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
+  geom_segment(
+    aes(x = xmin, xend = xmax, y = 0, yend = 0),
+    inherit.aes = FALSE,
+    linewidth = 1.1,
+    arrow = arrow(length = unit(0.22, "cm"), type = "closed")
+  ) +
+  geom_segment(
+    aes(xend = bin_mid, yend = y_line_end),
+    linewidth = 0.35, alpha = 0.35
+  ) +
+  geom_point(
+    aes(size = n_objects),
+    shape = 21,
+    fill = "#56B4E9",
+    color = "#56B4E9",
+    alpha = 0.65
+  ) +
+  geom_text(
+    aes(y = y_label, label = label),
+    size = 2.5,
+    lineheight = 0.95,
+    angle = 45,
+    hjust = 0.5,
+    vjust = 0.5) +
+  scale_x_continuous(
+    name = NULL,
+    breaks = NULL,
+    labels = NULL,
+    expand = expansion(mult = c(0.05, 0.10))
+  ) +
+  scale_y_continuous(
+    name = NULL,
+    breaks = NULL
+  ) +
+  scale_size(range = c(5, 30), guide = "none") +
+  coord_cartesian(clip = "off") +
+  theme_void(base_size = 14) +
+  theme(
+    plot.margin = margin(25, 25, 25, 25),
+    plot.title = element_text(hjust = 0.5, margin = margin(b = 20))
+    ) +
+  labs(
+    title = "Timeline of Possible NEO Impacts Between 2026 and 2129"
+  )
+```
+
+
+### Original
+
+```{r}
+#| label: impacts-timeline-bubble-plot-orig
 #| warning: false
 
 bin_width <- 10
@@ -546,3 +628,373 @@ datatable(
   ")
 )
 ```
+
+# Understanding the Table {scrolling="true"}
+
+::: {.card title="Case Study: 2024 YR4" fill="false"}
+
+Each row in NASA's sentry table represents a *near-Earth Object (NEO)* currently monitored by Sentry that presents any statistical chance of impacting the Earth. To illustrate what each column and data point represents, we will use the asteroid **2024 YR4** as an example, which briefly had a **3.1%** chance of hitting Earth before further calculations reduced that risk to **0.00081%**, generating [significant media attention](https://www.esa.int/Space_Safety/Planetary_Defence/ESA_actively_monitoring_near-Earth_asteroid_2024_YR4) as a result.
+
+:::
+
+::: {.card title="Designation Breakdown"}
+
+:::
+
+##
+
+```{r}
+#| label: year-detect
+
+value_box(
+  title = "Year Detected",
+  value = "2024",
+  showcase = bs_icon("calendar"),
+  showcase_layout = "left center",
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px"
+)
+```
+
+```{r}
+#| label: half-month
+
+value_box(
+  title = "Half-Month Code",
+  value = "Y",
+  showcase = bs_icon("type"),
+  theme = value_box_theme(bg = "#e6f2fd"),
+  height = "150px",
+  p(
+    "2nd Half of December",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+```{r}
+#| label: sequence-sub
+
+value_box(
+  title = "Sequence Subscript",
+  value = "R4",
+  showcase = bs_icon("list-ol"),
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px",
+  p(
+    "117th Designation That Half-Month",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+```{r}
+#| label: peak-prob
+
+value_box(
+  title = "Peak Probability",
+  value = "3.1%",
+  showcase = bs_icon("exclamation-triangle"),
+  theme = value_box_theme(bg = "#e6f2fd"),
+  height = "150px",
+  p(
+    "Highest Recorded (Jan 2025)",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+```{r}
+#| label: current-prob
+
+value_box(
+  title = "Current Probability",
+  value = ".00081%",
+  showcase = bs_icon("percent"),
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px",
+  p(
+    "Revised Probability (Mar 2026)",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+##
+
+::: {.card title="Identification Data"}
+
+:::
+
+##
+
+```{r}
+#| label: object-des
+
+value_box(
+  title = NULL,
+  value = div(
+    "Object",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("tag"),
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px",
+  p(
+    "Provisional designation: Year + half-month code + sequence subscript",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+```{r}
+#| label: last-obs
+
+value_box(
+  title = NULL,
+  value = div(
+    "Last Observed",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("eye"),
+  theme = value_box_theme(bg = "#e6f2fd"),
+  height = "150px",
+  p(
+    "Most recent observation date",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+```{r}
+#| label: est-diam
+
+value_box(
+  title = NULL,
+  value = div(
+    "Estimated Diameter",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("arrows-angle-expand"),
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px",
+  p(
+    "Best guess based on shape and light reflection intensity",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+##
+
+::: {.card title="Orbit & Impact Data"}
+
+:::
+
+##
+
+```{r}
+#| label: year-range
+
+value_box(
+  title = NULL,
+  value = div(
+    "Impact Year Range",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("calendar"),
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px",
+  p(
+    "Years in which impact could occur",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+```{r}
+#| label: pot-impacts
+
+value_box(
+  title = NULL,
+  value = div(
+    "Potential Impacts",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("circle"),
+  theme = value_box_theme(bg = "#e6f2fd"),
+  height = "150px",
+  p(
+    "Possible impacts throughout year range",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+```{r}
+#| label: impact-prob
+
+value_box(
+  title = NULL,
+  value = div(
+    "Impact Probability",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("dice-1"),
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px",
+  p(
+    "Cumulative chance across all passes",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+```{r}
+#| label: velocity-inf
+
+value_box(
+  title = NULL,
+  value = div(
+    "Velocity (V∞)",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("speedometer2"),
+  theme = value_box_theme(bg = "#e6f2fd"),
+  height = "150px",
+  p(
+    "Speed without major gravitational pull",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+```
+
+##
+
+::: {.card title="Reference Scales"}
+
+:::
+
+##
+
+::: {.card title="Palermo Scale"}
+
+```{r}
+#| label: palermo-scale
+
+palermo <- data.frame(
+  value   = c("< -2", "-2 to -1", "-1 to 0", "0", "> 0"),
+  meaning = c("Less than 1% of background risk", "1-10% of background risk",
+              "10-100% of background risk",      "Equal to background risk",
+              "Exceeds all background risk"),
+  level   = c("Minimal concern", "Worth monitoring", "Careful attention",
+              "Serious attention", "High priority"),
+  bg      = c("#2d6a4f", "#52b788", "#d4a017", "#e07b20", "#c0392b"),
+  fg      = c("#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff")
+)
+
+grad_bar <- div(
+  style = "height:14px; border-radius:6px; margin-bottom:10px;
+           background: linear-gradient(90deg,
+             #2d6a4f 0%, #52b788 25%, #d4a017 50%, #e07b20 75%, #c0392b 100%);"
+)
+
+tick_labels <- tags$table(
+  style = "width:100%; border-collapse:collapse; margin-bottom:12px;",
+  tags$tr(
+    tags$td(style = "width:20%; text-align:left; font-size:11px; color:#666;", "< -2"),
+    tags$td(style = "width:20%; text-align:center; font-size:11px; color:#666;", "-2"),
+    tags$td(style = "width:20%; text-align:center; font-size:11px; color:#666;", "-1"),
+    tags$td(style = "width:20%; text-align:center; font-size:11px; color:#666;", "0"),
+    tags$td(style = "width:20%; text-align:right; font-size:11px; color:#666;", "> 0")
+  )
+)
+
+rows <- lapply(seq_len(nrow(palermo)), function(i) {
+  tags$tr(
+    tags$td(style = paste0("background:", palermo$bg[i], "; color:", palermo$fg[i],
+                           "; font-weight:600; padding:6px 10px; border-radius:3px;
+                           text-align:center; white-space:nowrap;"),
+            palermo$value[i]),
+    tags$td(style = "padding:6px 10px; font-size:13px;", palermo$meaning[i]),
+    tags$td(style = paste0("padding:6px 10px; font-size:13px; font-weight:600; color:",
+                           palermo$bg[i], ";"), palermo$level[i])
+  )
+})
+
+tagList(
+  tags$p(style = "font-size:11px; color:#888; margin-bottom:10px; font-style:italic;",
+         "Logarithmic · Technical Audience"),
+  grad_bar,
+  tick_labels,
+  tags$table(style = "width:100%; border-collapse:collapse;", tags$tbody(tagList(rows))),
+  tags$p(style = "font-size:12px; color:#888; margin-top:10px; font-style:italic;",
+         HTML("Reported as <b>Cumulative</b> (all passes) and <b>Maximum</b> (worst single pass).
+               Nothing currently exceeds -2."))
+)
+```
+
+:::
+
+
+::: {.card title="Torino Scale"}
+
+```{r}
+#| label: torino-scale
+
+torino <- data.frame(
+  score   = c("0", "1", "2-4", "5-7", "8-10"),
+  label   = c("No Hazard", "Normal", "Attention", "Threatening", "Certain"),
+  desc    = c("Burns up in atmosphere or no risk",
+              "Routine pass, no discernible danger",
+              "Warrants monitoring by astronomers",
+              "Potentially unprecedented global threat",
+              "Collision certain; size determines severity"),
+  bg      = c("#adb5bd", "#2d6a4f", "#d4a017", "#e07b20", "#c0392b"),
+  fg      = c("#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff")
+)
+
+torino_cols <- c("#adb5bd","#2d6a4f","#52b788","#7bc67e",
+                 "#d4a017","#d4a017","#e07b20","#e07b20",
+                 "#c0392b","#c0392b","#8b0000")
+
+cell_strip <- tags$table(
+  style = "width:100%; border-collapse:collapse; margin-bottom:12px; table-layout:fixed;",
+  tags$tr(
+    lapply(0:10, function(i) {
+      tags$td(
+        style = paste0(
+          "background:", torino_cols[i + 1], "; color:#fff; font-weight:700; ",
+          "font-size:12px; text-align:center; padding:7px 0; ",
+          if (i == 0) "border-top-left-radius:5px; border-bottom-left-radius:5px;" else "",
+          if (i == 10) "border-top-right-radius:5px; border-bottom-right-radius:5px;" else ""
+        ),
+        as.character(i)
+      )
+    })
+  )
+)
+
+rows <- lapply(seq_len(nrow(torino)), function(i) {
+  tags$tr(
+    tags$td(style = paste0("background:", torino$bg[i], "; color:", torino$fg[i],
+                           "; font-weight:700; padding:6px 10px; border-radius:3px;
+                           text-align:center; white-space:nowrap;"),
+            torino$score[i]),
+    tags$td(style = paste0("padding:6px 10px; font-size:13px; font-weight:600; color:",
+                           torino$bg[i], ";"), torino$label[i]),
+    tags$td(style = "padding:6px 10px; font-size:13px;", torino$desc[i])
+  )
+})
+
+tagList(
+  tags$p(style = "font-size:11px; color:#888; margin-bottom:10px; font-style:italic;",
+         "Integer 0-10 · Public Communication · Impacts < 100 Years Away"),
+  cell_strip,
+  tags$table(style = "width:100%; border-collapse:collapse;", tags$tbody(tagList(rows))),
+  tags$p(style = "font-size:12px; color:#888; margin-top:10px; font-style:italic;",
+         HTML("No known object currently exceeds a Torino score of <b>1</b>."))
+)
+```
+
+:::
