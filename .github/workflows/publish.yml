@@ -33,6 +33,9 @@ jobs:
             scales
             DT
             htmltools
+            flexdashboard
+            bslib
+            bsicons
 
       - name: Render dashboard
         run: |
