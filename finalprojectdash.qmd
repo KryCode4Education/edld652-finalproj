@@ -484,8 +484,8 @@ risk_long <- asteroid_risk |>
 
 risk_long$scale <- recode(
   risk_long$scale,
-  ps_cum_cat = "PS Cumulative",
-  ps_max_cat = "PS Maximum"
+  ps_cum_cat = "Cumulative",
+  ps_max_cat = "Maximum"
 )
 
 risk_long$category <- factor(
@@ -504,8 +504,8 @@ ggplot(risk_counts,
     x = "Palermo Scale Risk Category",
     y = "Number of Asteroids",
     fill = "Palermo Scale",
-    title = "Relative Risk Distribution of Monitored Near-Earth Asteroids",
-    subtitle = "Comparison of cumulative (ps_cum) and maximum (ps_max) Palermo Scale values"
+    title = "Relative Risk Distribution of Monitored Near-Earth Objects",
+    subtitle = "Comparison of cumulative and maximum Palermo Scale values"
   ) +
   theme_minimal(base_size = 12)
 
