@@ -448,8 +448,11 @@ ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
 
 # Palermo Scale Risk Distribution
 
+## {.tabset}
+
+### Updated
 ```{r}
-#| label: palermo-bar-chart
+#| label: palermo-bar-chart-update
 #| warning: false
 #| fig-cap: "Distribution of monitored objects across Palermo Scale risk categories"
 
@@ -502,10 +505,69 @@ ggplot(risk_counts,
   scale_y_continuous(labels = scales::comma) +
   labs(
     x = "Palermo Scale Risk Category",
-    y = "Number of Asteroids",
+    y = "Number of Objects",
     fill = "Palermo Scale",
     title = "Relative Risk Distribution of Monitored Near-Earth Objects",
     subtitle = "Comparison of cumulative and maximum Palermo Scale values"
+  ) +
+  theme_minimal(base_size = 12)
+
+```
+
+### Original
+
+```{r}
+#| label: palermo-bar-chart-orig
+#| warning: false
+#| fig-cap: "Distribution of monitored asteroids across Palermo Scale risk categories"
+
+asteroid_risk <- asteroid_table_typed |>
+  mutate(
+    ps_cum_cat = case_when(
+      ps_cum > 0 ~ ">0",
+      ps_cum <= 0 & ps_cum > -2 ~ ">0 to =-2",
+      ps_cum <= -2 & ps_cum > -4 ~ ">-2 to =-4",
+      ps_cum <= -4 & ps_cum > -6 ~ ">-4 to =-6",
+      ps_cum <= -6 ~ "<=-6",
+      TRUE ~ NA_character_
+    ),
+    ps_max_cat = case_when(
+      ps_max > 0 ~ ">0",
+      ps_max <= 0 & ps_max > -2 ~ ">0 to =-2",
+      ps_max <= -2 & ps_max > -4 ~ ">-2 to =-4",
+      ps_max <= -4 & ps_max > -6 ~ ">-4 to =-6",
+      ps_max <= -6 ~ "<=-6",
+      TRUE ~ NA_character_
+    )
+  )
+
+risk_long <- asteroid_risk |>
+  select(ps_cum_cat, ps_max_cat) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "scale",
+    values_to = "category"
+  ) |>
+  filter(!is.na(category))
+
+risk_long$category <- factor(
+  risk_long$category,
+  levels = c(">0", ">0 to =-2", ">-2 to =-4", ">-4 to =-6", "<=-6")
+)
+
+risk_counts <- risk_long |>
+  count(scale, category)
+
+ggplot(risk_counts,
+       aes(x = category, y = n, fill = scale)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = comma) +
+  labs(
+    x = "Palermo Scale Risk Category",
+    y = "Number of Asteroids",
+    fill = "Palermo Scale",
+    title = "Relative Risk Distribution of Monitored Near-Earth Asteroids",
+    subtitle = "Comparison of cumulative (ps_cum) and maximum (ps_max) Palermo Scale values"
   ) +
   theme_minimal(base_size = 12)
 
@@ -647,18 +709,113 @@ Each row in NASA's sentry table represents a *near-Earth Object (NEO)* currently
 
 :::
 
-##
+## Designation Breakdown
+
+```{r}
+#| label: des-breakdown
+#| include: false
+# This is my playground for trying to standardize tile size.
+
+desbreak <- list(
+  value_box(
+  title = NULL,
+  value = div(
+    "2024",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("calendar"),
+  showcase_layout = "top right",
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px",
+  p(
+    "Year Detected",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+),
+value_box(
+  title = NULL,
+  value = div(
+    "Y",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("type"),
+  theme = value_box_theme(bg = "#e6f2fd"),
+  height = "150px",
+  p(
+    "Half-Month Code — 2nd Half of December",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+),
+value_box(
+  title = NULL,
+  value = div(
+    "R4",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("list-ol"),
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px",
+  p(
+    "Sequence Subscript — 117th Designation That Half-Month",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+),
+value_box(
+  title = NULL,
+  value = div(
+    "3.1%",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("exclamation-triangle"),
+  theme = value_box_theme(bg = "#e6f2fd"),
+  height = "150px",
+  p(
+    "Peak Probability — Recorded Jan 2025",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+),
+value_box(
+  title = NULL,
+  value = div(
+    ".00081%",
+    style = "font-size: 2rem; font-weight: 600;"
+  ),
+  showcase = bs_icon("percent"),
+  theme = value_box_theme(bg = "#20438e"),
+  height = "150px",
+  p(
+    "Current Probability — Revised Mar 2026",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
+)
+)
+
+layout_column_wrap(
+  width = "250px",
+  !!!desbreak
+)
+```
 
 ```{r}
 #| label: year-detect
 
 value_box(
-  title = "Year Detected",
-  value = "2024",
+  title = div(
+    "Year",
+    style = "font-size: 0.75rem; font-style: italic;"
+    ),
+  value = div(
+    "2024",
+    style = "font-size: 1.5rem; font-weight: 600;"
+  ),
   showcase = bs_icon("calendar"),
-  showcase_layout = "left center",
+  showcase_layout = "top right",
   theme = value_box_theme(bg = "#20438e"),
-  height = "150px"
+  height = "200px",
+  p(
+    "Year Detected",
+    style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
+  )
 )
 ```
 
@@ -666,11 +823,18 @@ value_box(
 #| label: half-month
 
 value_box(
-  title = "Half-Month Code",
-  value = "Y",
+  title = div(
+    "Half-Month Code",
+    style = "font-size: 0.75rem; font-style: italic;"
+  ),
+  value = div(
+    "Y",
+    style = "font-size: 1.5rem; font-weight: 600;"
+  ),
   showcase = bs_icon("type"),
+  showcase_layout = "top right",
   theme = value_box_theme(bg = "#e6f2fd"),
-  height = "150px",
+  height = "200px",
   p(
     "2nd Half of December",
     style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
@@ -682,11 +846,18 @@ value_box(
 #| label: sequence-sub
 
 value_box(
-  title = "Sequence Subscript",
-  value = "R4",
+  title = div(
+    "Sequence Subscript",
+    style = "font-size: 0.75rem; font-style: italic;"
+  ),
+  value = div(
+    "R4",
+    style = "font-size: 1.5rem; font-weight: 600;"
+  ),
   showcase = bs_icon("list-ol"),
+  showcase_layout = "top right",
   theme = value_box_theme(bg = "#20438e"),
-  height = "150px",
+  height = "200px",
   p(
     "117th Designation That Half-Month",
     style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
@@ -698,13 +869,20 @@ value_box(
 #| label: peak-prob
 
 value_box(
-  title = "Peak Probability",
-  value = "3.1%",
+  title = div(
+    "Peak Probability",
+    style = "font-size: 0.75rem; font-style: italic;"
+  ),
+  value = div(
+    "3.1%",
+    style = "font-size: 1.5rem; font-weight: 600;"
+  ),
   showcase = bs_icon("exclamation-triangle"),
+  showcase_layout = "top right",
   theme = value_box_theme(bg = "#e6f2fd"),
-  height = "150px",
+  height = "200px",
   p(
-    "Highest Recorded (Jan 2025)",
+    "Recorded Jan 2025",
     style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
   )
 )
@@ -714,13 +892,20 @@ value_box(
 #| label: current-prob
 
 value_box(
-  title = "Current Probability",
-  value = ".00081%",
+  title = div(
+    "Current Probability",
+    style = "font-size: 0.75rem; font-style: italic;"
+  ),
+  value = div(
+    ".00081%",
+    style = "font-size: 1.5rem; font-weight: 600;"
+  ),
   showcase = bs_icon("percent"),
+  showcase_layout = "top right",
   theme = value_box_theme(bg = "#20438e"),
-  height = "150px",
+  height = "200px",
   p(
-    "Revised Probability (Mar 2026)",
+    "Revised Mar 2026",
     style = "font-size: 0.75rem; font-style: italic; margin-bottom: 0;"
   )
 )
@@ -732,7 +917,7 @@ value_box(
 
 :::
 
-##
+## Identification Data
 
 ```{r}
 #| label: object-des
@@ -741,7 +926,7 @@ value_box(
   title = NULL,
   value = div(
     "Object",
-    style = "font-size: 2rem; font-weight: 600;"
+    style = "font-size: 1.5rem; font-weight: 600;"
   ),
   showcase = bs_icon("tag"),
   theme = value_box_theme(bg = "#20438e"),
@@ -760,7 +945,7 @@ value_box(
   title = NULL,
   value = div(
     "Last Observed",
-    style = "font-size: 2rem; font-weight: 600;"
+    style = "font-size: 1.5rem; font-weight: 600;"
   ),
   showcase = bs_icon("eye"),
   theme = value_box_theme(bg = "#e6f2fd"),
@@ -779,7 +964,7 @@ value_box(
   title = NULL,
   value = div(
     "Estimated Diameter",
-    style = "font-size: 2rem; font-weight: 600;"
+    style = "font-size: 1.5rem; font-weight: 600;"
   ),
   showcase = bs_icon("arrows-angle-expand"),
   theme = value_box_theme(bg = "#20438e"),
@@ -797,7 +982,7 @@ value_box(
 
 :::
 
-##
+## Orbit & Impact Data
 
 ```{r}
 #| label: year-range
@@ -806,7 +991,7 @@ value_box(
   title = NULL,
   value = div(
     "Impact Year Range",
-    style = "font-size: 2rem; font-weight: 600;"
+    style = "font-size: 1.5rem; font-weight: 600;"
   ),
   showcase = bs_icon("calendar"),
   theme = value_box_theme(bg = "#20438e"),
@@ -825,7 +1010,7 @@ value_box(
   title = NULL,
   value = div(
     "Potential Impacts",
-    style = "font-size: 2rem; font-weight: 600;"
+    style = "font-size: 1.5rem; font-weight: 600;"
   ),
   showcase = bs_icon("circle"),
   theme = value_box_theme(bg = "#e6f2fd"),
@@ -844,7 +1029,7 @@ value_box(
   title = NULL,
   value = div(
     "Impact Probability",
-    style = "font-size: 2rem; font-weight: 600;"
+    style = "font-size: 1.5rem; font-weight: 600;"
   ),
   showcase = bs_icon("dice-1"),
   theme = value_box_theme(bg = "#20438e"),
@@ -863,7 +1048,7 @@ value_box(
   title = NULL,
   value = div(
     "Velocity (V∞)",
-    style = "font-size: 2rem; font-weight: 600;"
+    style = "font-size: 1.5rem; font-weight: 600;"
   ),
   showcase = bs_icon("speedometer2"),
   theme = value_box_theme(bg = "#e6f2fd"),
@@ -881,7 +1066,7 @@ value_box(
 
 :::
 
-##
+## Reference Scales
 
 ::: {.card title="Palermo Scale"}
 
