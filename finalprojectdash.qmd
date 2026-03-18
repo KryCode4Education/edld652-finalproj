@@ -349,7 +349,6 @@ ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
   )
 ```
 
-
 ### Original
 
 ```{r}
@@ -449,11 +448,27 @@ ggplot(impacts_timeline, aes(x = bin_mid, y = y)) +
 
 # Palermo Scale Risk Distribution
 
+::: sidebar
+## About This Graph
+
+This graph provides a distribution of currently monitored asteroids based on their Palermo scale rating. This scale is designed for comparing the likelihood of an object's possible impact with the average risk posed by objects of similar or larger size over the range of years until the possible impact of the first object, which is known as the *background risk*. The Palermo scale is best understood as:
+
+- **Values less than -2**: Minimal to no risk
+- **Values between -2 to 0**: Risk worth careful consideration
+- **Values greater than 0**: Serious concern for risk
+  
+At current, no monitored objects are considered a **serious concern**.
+
+## Filler
+
+:::
+
 ## {.tabset}
 
 ### Updated
+
 ```{r}
-#| label: palermo-bar-chart-update
+#| label: m7-bar-chart-update
 #| warning: false
 #| fig-cap: "Distribution of monitored objects across Palermo Scale risk categories"
 
